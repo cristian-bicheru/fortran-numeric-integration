@@ -129,56 +129,26 @@ module lib
 
         end function apply
 
-        subroutine solve_consts(evals, cs, tau, i)
-            double precision, intent(in):: tau
-            double precision, dimension(4):: evals, cs
-            integer, intent(in):: i
-
-            integer:: i1, i2, i3
-
-            i1 = i+1
-            if (i1 > 4) i1 = i1 - 4
-            i2 = i+2
-            if (i2 > 4) i2 = i2 - 4
-            i3 = i+3
-            if (i3 > 4) i3 = i3 - 4
-
-            cs(1) = evals(i1)
-            cs(2) = tau*(evals(i2)-evals(i))
-            cs(3) = 3*(evals(i2)-evals(i1))-tau*(evals(i3)-evals(i1)+2*(evals(i3)-evals(i)))
-            cs(4) = -2*(evals(i2)-evals(i1))+tau*(evals(i3)-evals(i1)+evals(i2)-evals(i))
-        end subroutine solve_consts
-
-        double precision function integrate(func, istart, iend, dx, tau)
+        double precision function integrate(func, istart, iend, dx)
             character(*), intent(in):: func
-            double precision, intent(in):: istart, iend, dx, tau
+            double precision, intent(in):: istart, iend, dx
 
             double precision:: x, s, fend
-            double precision, dimension(4):: evals, cs
-            integer:: flen, i
-            flen = len_trim(func)
+            integer:: flen
+            flen = len_trim(func)+1
             x = istart
-            fend = iend+dx
+            fend = iend-dx
             
-            do i = -1, 2
-                evals(i+1) = eval(func, istart+i*dx, 1, flen)
-            end do
-
-            i = 0
-            call solve_consts(evals, cs, tau, 0)
-            s = cs(4)/4+cs(3)/3+cs(2)/2+cs(1)
+            s = eval(func, x, 1, flen)/2
 
             do
-                i = i + 1
-                if (i > 4) i = 1
-
-                evals(i) = eval(func, x, 1, flen)
-                call solve_consts(evals, cs, tau, 0)
-                s = s + cs(4)/4+cs(3)/3+cs(2)/2+cs(1)
-
                 x = x + dx
                 if (x > fend) exit
+
+                s = s+eval(func, x, 1, flen)
             end do
+
+            s = s+eval(func, iend, 1, flen)/2
 
             integrate = s*dx
         end function integrate
